@@ -1,0 +1,10 @@
+{
+  "dependencies": {
+    "electron": "^29.3.0",
+    "electron-builder": "^24.13.3",
+    "ffmpeg-static": "^5.2.0"
+  },
+  "scripts": {
+    "s": "electron ."
+  }
+}
