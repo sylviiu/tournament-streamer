@@ -4,7 +4,7 @@ const usePadding = padding % 2 === 0 ? padding : (padding + 1)
 
 const arr = [];
 
-const layers = streams >= 3 ? 2 : 1;
+const layers = streams > 3 ? 2 : 1;
 const streamHeight = (height / layers) - (layers < 2 ? 0 : (usePadding/2));
 
 const topLayerStreams = Math.floor(streams / layers);

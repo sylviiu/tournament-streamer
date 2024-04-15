@@ -26,8 +26,36 @@ const streams = session.streams.map(stream => {
     let video;
     let mediaSource;
     let sourceBuffer;
+    let sourceBufferQueue = [];
+    let sourceBufferResolveQueue = [];
+    let appending = false;
 
-    const initialize = () => {
+    const appendBuffer = async (buf) => {
+        sourceBufferQueue.push(buf);
+
+        if(!appending) {
+            appending = true;
+            
+            while(sourceBufferQueue.length) {
+                const buf = sourceBufferQueue.shift();
+                await new Promise(async res => {
+                    sourceBufferResolveQueue.push(res);
+                    sourceBuffer.appendBuffer(buf);
+                })
+            };
+
+            appending = false;
+        } else {
+            console.log(`[${stream.stream}] already appending a buffer, just adding to queue!`)
+        }
+    }
+
+    const initialize = () => new Promise(async res => {
+        sourceBufferQueue = [];
+
+        if(sourceBufferResolveQueue.length || appending) await new Promise(async r => sourceBufferResolveQueue.push(r));
+        sourceBuffer = null;
+
         while(div.querySelector(`video`)) div.removeChild(div.querySelector(`video`));
         
         div.style.backgroundColor = `black`;
@@ -40,22 +68,28 @@ const streams = session.streams.map(stream => {
         video.style.overflow = `hidden`;
         div.appendChild(video);
 
-        if (!mediaSource) {
-            mediaSource = new MediaSource();
-            video.src = URL.createObjectURL(mediaSource);
-            mediaSource.addEventListener('sourceopen', () => {
-                sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8, vorbis"');
-                sourceBuffer.timestampOffset = 0;
-                sourceBuffer.appendWindowStart = 0;
-                sourceBuffer.appendWindowEnd = 10;
-            });
-        }
-    };
+        mediaSource = new MediaSource();
+        video.src = URL.createObjectURL(mediaSource);
+        mediaSource.addEventListener('sourceopen', () => {
+            sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp9, vorbis"');
+            sourceBuffer.addEventListener('update', () => {
+                while(sourceBufferResolveQueue.length) {
+                    const res = sourceBufferResolveQueue.shift();
+                    res();
+                };
+            })
+        });
+
+        res();
+    });
 
     ipc.stream(stream.stream, data => {
         if (sourceBuffer && !sourceBuffer.updating) {
-            //console.log(`Data for stream ${stream.stream}: appending`);
-            sourceBuffer.appendBuffer(data);
+            try {
+                appendBuffer(data);
+            } catch(e) {
+                initialize();
+            }
         } else {
             console.log(`Data for stream ${stream.stream}: NOT appending`);
         }
@@ -64,12 +98,26 @@ const streams = session.streams.map(stream => {
     console.log(`Created stream div for stream #${stream.stream}`);
     body.appendChild(div);
 
-    return {
+    const obj = {
         stream,
+        get mediaSource() {
+            return mediaSource;
+        },
+        get sourceBuffer() {
+            return sourceBuffer;
+        },
+        get video() {
+            return video;
+        },
+        initialize: () => initialize(),
         play: (streamID) => {
             initialize();
+            obj.streamID = streamID;
             ipc.start({ streamID, slot: `${stream.stream}` });
         },
+        streamID: null,
         div
     };
+
+    return obj;
 });

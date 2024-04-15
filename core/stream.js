@@ -16,6 +16,7 @@ setInterval(() => {
 class Stream extends EventEmitter {
     constructor(name, slot) {
         super();
+        this.slotNum = slot;
         this.slot = session.streams.find(o => o.stream == slot);
         this.width = Math.ceil(this.slot.width);
         this.height = Math.ceil(this.slot.height);
@@ -28,17 +29,20 @@ class Stream extends EventEmitter {
         this.stop();
 
         this.args = [
+            ...(config.hwaccel ? [`-hwaccel`, config.hwaccel] : []),
             `-probesize`, `32`,
             `-analyzeduration`, `0`,
             `-re`,
             `-i`, this.url,
             `-vf`, `format=yuv420p, scale=(iw*sar)*max(${this.width}/(iw*sar)\\,${this.height}/ih):ih*max(${this.width}/(iw*sar)\\,${this.height}/ih), crop=${this.width}:${this.height}`,
-            `-c:v`, `libvpx`,
-            `-cpu-used`, `5`,
+            `-c:v`, `libvpx-vp9`,
+            `-cpu-used`, `8`,
             `-deadline`, `realtime`,
-            `-b:v`, `30000k`,
+            `-b:v`, `4000k`,
+            `-minrate`, `3000k`,
+            `-maxrate`, `8000k`,
             `-quality`, `realtime`,
-            `-r`, `60`,
+            `-r`, `${config.fps}`,
             `-c:a`, `libvorbis`,
             `-f`, `webm`,
             `-`
@@ -52,18 +56,15 @@ class Stream extends EventEmitter {
 
         let started = false;
 
-        const errListener = data => {
-            if(!started) console.log(data.toString(`utf-8`).trim());
-        };
-
         this.proc.stdout.on(`data`, data => {
             bytes += Buffer.byteLength(data);
             this.emit(`data`, data);
             started = true;
-            this.proc.stderr.removeListener(`data`, errListener);
         });
 
-        this.proc.stderr.on(`data`, errListener);
+        this.proc.stderr.on(`data`, data => {
+            console.log(`[${this.slotNum}] ` + data.toString(`utf-8`).trim());
+        });
     }
 
     stop() {

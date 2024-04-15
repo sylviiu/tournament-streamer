@@ -7,11 +7,8 @@ const defaults = {
     width: 1920,
     height: 700,
     padding: 2,
-    ffmpeg: {
-        targetCodec: `h264`,
-        additionalInputArgs: [],
-        additionalOutputArgs: []
-    },
+    fps: 60,
+    inputCodec: `h264_amf`,
 };
 
 
