@@ -45,6 +45,9 @@ const streams = session.streams.map(stream => {
             video.src = URL.createObjectURL(mediaSource);
             mediaSource.addEventListener('sourceopen', () => {
                 sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8, vorbis"');
+                sourceBuffer.timestampOffset = 0;
+                sourceBuffer.appendWindowStart = 0;
+                sourceBuffer.appendWindowEnd = 10;
             });
         }
     };

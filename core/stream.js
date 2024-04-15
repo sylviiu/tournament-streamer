@@ -38,7 +38,7 @@ class Stream extends EventEmitter {
             `-deadline`, `realtime`,
             `-b:v`, `30000k`,
             `-quality`, `realtime`,
-            //`-an`,
+            `-r`, `60`,
             `-c:a`, `libvorbis`,
             `-f`, `webm`,
             `-`
