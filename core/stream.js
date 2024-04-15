@@ -17,6 +17,7 @@ class Stream extends EventEmitter {
     constructor(name, slot) {
         super();
         this.slotNum = slot;
+        this.streamID = name;
         this.slot = session.streams.find(o => o.stream == slot);
         this.width = Math.ceil(this.slot.width);
         this.height = Math.ceil(this.slot.height);
@@ -38,15 +39,20 @@ class Stream extends EventEmitter {
             `-c:v`, `libvpx-vp9`,
             `-cpu-used`, `8`,
             `-deadline`, `realtime`,
+            `-quality`, `realtime`,
             `-b:v`, `4000k`,
             `-minrate`, `3000k`,
             `-maxrate`, `8000k`,
-            `-quality`, `realtime`,
+            `-threads`, `1`,
             `-r`, `${config.fps}`,
             `-c:a`, `libvorbis`,
             `-f`, `webm`,
             `-`
         ];
+
+        const errLogger = data => {
+            console.log(`[${this.slotNum}] ` + data.toString(`utf-8`).trim());
+        };
 
         console.log(this.args)
         this.proc = child_process.execFile(ffmpeg, this.args, {
@@ -54,16 +60,13 @@ class Stream extends EventEmitter {
             encoding: 'buffer'
         });
 
-        let started = false;
+        this.proc.stderr.on(`data`, errLogger)
 
         this.proc.stdout.on(`data`, data => {
             bytes += Buffer.byteLength(data);
             this.emit(`data`, data);
+            this.proc.stderr.removeListener(`data`, errLogger)
             started = true;
-        });
-
-        this.proc.stderr.on(`data`, data => {
-            console.log(`[${this.slotNum}] ` + data.toString(`utf-8`).trim());
         });
     }
 

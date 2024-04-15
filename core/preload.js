@@ -4,8 +4,19 @@ contextBridge.exposeInMainWorld('conf', require(`../config.json`));
 contextBridge.exposeInMainWorld('session', require(`./session.js`));
 
 contextBridge.exposeInMainWorld('ipc', {
-    start: (data) => ipcRenderer.invoke('start', data),
-    stream: (slot, cb) => ipcRenderer.on(`stream-${slot}`, (_e, d) => cb(d))
+    handleStreamStates: (cb) => {
+        ipcRenderer.on(`streamStates`, () => ipcRenderer.send(`streamStates`, cb()));
+        ipcRenderer.send(`mainReady`);
+    },
+    getStreamStates: () => ipcRenderer.invoke(`getStreamStates`),
+    startStream: (data) => ipcRenderer.invoke('stream', data),
+    start: (slot, cb) => ipcRenderer.on(`start-${slot}`, (_e, d) => cb(d)),
+    stream: (slot, cb) => ipcRenderer.on(`stream-${slot}`, (_e, d) => cb(d)),
+    restart: (slot, cb) => ipcRenderer.on(`restart-${slot}`, (_e, d) => cb(d)),
+    mute: (slot, cb) => ipcRenderer.on(`mute-${slot}`, (_e, d) => cb(d)),
+    sendRestart: (slot) => ipcRenderer.invoke('restart', slot),
+    sendMute: (slot, value) => ipcRenderer.invoke(`mute`, { slot, value }),
+    sendStart: (slot, streamID) => ipcRenderer.invoke(`start`, { slot, streamID })
 });
 
 const addScript = (path, type) => new Promise(async (res, rej) => {

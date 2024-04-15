@@ -34,7 +34,6 @@ module.exports = (toLoad, obj={}) => {
     const window = new BrowserWindow(args);
 
     if(toLoad) window.loadFile(toLoad);
-
     ipc(window);
 
     return window;

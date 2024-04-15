@@ -1,15 +1,12 @@
+document.body.style.width = conf.width;
+document.body.style.minWidth = conf.width;
+document.body.style.maxWidth = conf.width;
 
-const body = document.firstChild.lastChild
+document.body.style.height = conf.height;
+document.body.style.minHeight = conf.height;
+document.body.style.maxHeight = conf.height;
 
-body.style.width = conf.width;
-body.style.minWidth = conf.width;
-body.style.maxWidth = conf.width;
-
-body.style.height = conf.height;
-body.style.minHeight = conf.height;
-body.style.maxHeight = conf.height;
-
-body.style.overflow = `hidden`;
+document.body.style.overflow = `hidden`;
 
 console.log(session)
 
@@ -53,7 +50,11 @@ const streams = session.streams.map(stream => {
     const initialize = () => new Promise(async res => {
         sourceBufferQueue = [];
 
-        if(sourceBufferResolveQueue.length || appending) await new Promise(async r => sourceBufferResolveQueue.push(r));
+        if(sourceBuffer && sourceBufferResolveQueue.length || appending) {
+            await new Promise(async r => sourceBufferResolveQueue.push(r));
+            sourceBuffer.remove();
+        };
+
         sourceBuffer = null;
 
         while(div.querySelector(`video`)) div.removeChild(div.querySelector(`video`));
@@ -62,7 +63,7 @@ const streams = session.streams.map(stream => {
 
         video = document.createElement('video');
         video.autoplay = true;
-        video.muted = true;
+        if(obj.muted) video.muted = true;
         video.style.width = `${stream.width}px`;
         video.style.height = `${stream.height}px`;
         video.style.overflow = `hidden`;
@@ -83,22 +84,44 @@ const streams = session.streams.map(stream => {
         res();
     });
 
+    ipc.restart(stream.stream, () => {
+        console.log(`[${stream.stream}] Restarting`);
+        //obj.play(obj.streamID);
+        initialize()
+    });
+
+    ipc.start(stream.stream, streamID => {
+        console.log(`[${stream.stream}] Starting new stream: ${streamID}`);
+        obj.play(streamID);
+    });
+
+    ipc.mute(stream.stream, (val) => {
+        if(val) {
+            console.log(`[${stream.stream}] Muting (${val}) @ ${obj.streamID}`);
+            obj.muted = true;
+            video.muted = true;
+        } else {
+            console.log(`[${stream.stream}] Unmuting (${val}) @ ${obj.streamID}`);
+            obj.muted = false;
+            video.muted = false;
+        }
+    });
+
     ipc.stream(stream.stream, data => {
-        if (sourceBuffer && !sourceBuffer.updating) {
+        if(sourceBuffer && !sourceBuffer.updating) {
             try {
                 appendBuffer(data);
             } catch(e) {
                 initialize();
             }
-        } else {
-            console.log(`Data for stream ${stream.stream}: NOT appending`);
-        }
+        };
     });
 
     console.log(`Created stream div for stream #${stream.stream}`);
-    body.appendChild(div);
+    document.body.appendChild(div);
 
     const obj = {
+        muted: true,
         stream,
         get mediaSource() {
             return mediaSource;
@@ -113,7 +136,7 @@ const streams = session.streams.map(stream => {
         play: (streamID) => {
             initialize();
             obj.streamID = streamID;
-            ipc.start({ streamID, slot: `${stream.stream}` });
+            ipc.startStream({ streamID, slot: `${stream.stream}` });
         },
         streamID: null,
         div
@@ -121,3 +144,7 @@ const streams = session.streams.map(stream => {
 
     return obj;
 });
+
+console.log(`ready to handle states`)
+
+ipc.handleStreamStates(() => JSON.parse(JSON.stringify(streams)));
