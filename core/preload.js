@@ -57,14 +57,8 @@ const addScript = (path, type) => new Promise(async (res, rej) => {
 })
 
 addEventListener(`DOMContentLoaded`, async () => {
-    await new Promise(async res => {
-        require('fs').readdir(`./html/js`, (e, afterload) => {
-            if(e) throw e;
-            afterload = afterload.filter(s => s.endsWith(`.js`) && s != `minified.js`)
-            console.log(`-- ADDING script: ${afterload.join(`, `)}`)
-            Promise.all(afterload.map(path => addScript(`./js/${path}`))).then(res)
-        });
-    });
+    const scriptToAdd = (window.location.href.split(`/`).slice(-1)[0].split(`.`).slice(0, -1).join(`.`) + `.js`);
+    await addScript(`./js/${scriptToAdd}`)
 
-    console.log(`loaded`)
+    console.log(`loaded ${scriptToAdd}`)
 });

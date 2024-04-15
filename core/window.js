@@ -2,7 +2,7 @@ const { BrowserWindow, app } = require('electron');
 const config = require(`./config.js`);
 const ipc = require('./ipc');
 
-module.exports = (toLoad, main, obj={}) => {
+module.exports = (toLoad, obj={}) => {
     const args = require(`../util/recursiveAssign`)({
         width: config.width,
         minWidth: config.width,
@@ -34,7 +34,8 @@ module.exports = (toLoad, main, obj={}) => {
     const window = new BrowserWindow(args);
 
     if(toLoad) window.loadFile(toLoad);
-    if(main) ipc(window);
+
+    ipc(window);
 
     return window;
 }

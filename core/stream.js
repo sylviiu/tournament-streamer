@@ -27,45 +27,19 @@ class Stream extends EventEmitter {
     start() {
         this.stop();
 
-        /*this.args = [
-            `-probesize`, `32`,
-            `-analyzeduration`, `0`,
-            `-re`,
-            `-i`, this.url, 
-            `-vf`, `scale=(iw*sar)*max(${this.width}/(iw*sar)\\,${this.height}/ih):ih*max(${this.width}/(iw*sar)\\,${this.height}/ih), crop=${this.width}:${this.height}`,
-            `-c:v`, `libx264`, 
-            `-preset`, `ultrafast`,
-            `-tune`, `zerolatency`,
-            `-profile:v`, `baseline`,
-            `-pix_fmt`, `yuv420p`, 
-            `-b:v`,  `10000k`,
-            `-minrate`, `6000k`,
-            `-maxrate`, `15000k`,
-            `-c:a`, `libopus`,
-            `-blocksize`, `32`,
-            `-flush_packets`, `1`,
-            `-fflags`, `nobuffer`,
-            `-flags`, `low_delay`,
-            `-avioflags`, `direct`,
-            `-f`, `mp4`,
-            `-movflags`, `frag_keyframe+empty_moov`, 
-            `-`
-        ];*/
-
         this.args = [
             `-probesize`, `32`,
             `-analyzeduration`, `0`,
             `-re`,
-            `-i`, this.url, 
+            `-i`, this.url,
             `-vf`, `format=yuv420p, scale=(iw*sar)*max(${this.width}/(iw*sar)\\,${this.height}/ih):ih*max(${this.width}/(iw*sar)\\,${this.height}/ih), crop=${this.width}:${this.height}`,
-            `-c:v`, `libvpx`, 
+            `-c:v`, `libvpx`,
             `-cpu-used`, `5`,
             `-deadline`, `realtime`,
-            `-b:v`, `10000k`,
-            `-minrate`, `5000k`,
-            `-maxrate`, `20000k`,
+            `-b:v`, `30000k`,
             `-quality`, `realtime`,
-            `-an`,
+            //`-an`,
+            `-c:a`, `libvorbis`,
             `-f`, `webm`,
             `-`
         ];

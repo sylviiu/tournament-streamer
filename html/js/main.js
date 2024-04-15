@@ -1,3 +1,16 @@
+
+const body = document.firstChild.lastChild
+
+body.style.width = conf.width;
+body.style.minWidth = conf.width;
+body.style.maxWidth = conf.width;
+
+body.style.height = conf.height;
+body.style.minHeight = conf.height;
+body.style.maxHeight = conf.height;
+
+body.style.overflow = `hidden`;
+
 console.log(session)
 
 const streams = session.streams.map(stream => {
@@ -17,10 +30,11 @@ const streams = session.streams.map(stream => {
     const initialize = () => {
         while(div.querySelector(`video`)) div.removeChild(div.querySelector(`video`));
         
+        div.style.backgroundColor = `black`;
+
         video = document.createElement('video');
         video.autoplay = true;
         video.muted = true;
-        video.controls = true;
         video.style.width = `${stream.width}px`;
         video.style.height = `${stream.height}px`;
         video.style.overflow = `hidden`;
@@ -30,7 +44,7 @@ const streams = session.streams.map(stream => {
             mediaSource = new MediaSource();
             video.src = URL.createObjectURL(mediaSource);
             mediaSource.addEventListener('sourceopen', () => {
-                sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8"');
+                sourceBuffer = mediaSource.addSourceBuffer('video/webm; codecs="vp8, vorbis"');
             });
         }
     };
@@ -45,7 +59,7 @@ const streams = session.streams.map(stream => {
     });
 
     console.log(`Created stream div for stream #${stream.stream}`);
-    document.firstChild.lastChild.appendChild(div);
+    body.appendChild(div);
 
     return {
         stream,
